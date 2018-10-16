@@ -58,14 +58,35 @@ def encryptMessage(publicKeyAddress, message): #encryption function
 
     cipherText = b64encode(cipherText_Message_Bytes).decode('utf-8') #convert cipher text from bytes to string
 
-    JSON_output = json.dumps({'AES ciphertext' : cipherText, 'RSA cipher text' : cipherText_Keys_String, 'HMAC Tag' : h.hexdigest() }) 
+    JSON_output = json.dumps({'AES_ciphertext' : cipherText, 'RSA_ciphertext' : cipherText_Keys_String, 'HMAC_Tag' : h.hexdigest() }) 
 
-    print(JSON_output)
+    #print(JSON_output)
+    outfile = open("Testing.encrypt", "w")
+    outfile.write(JSON_output)
+    outfile.close()
 
     return JSON_output #return json object containing encrypted keys, ciphertexts, and HMAC tag
+    
 
 def decryptMessage(privateKeyAddress, JSON_output):
     
+    privateKey = RSA.generate(2048) #generate rsa key object
+    jsonFile = json.loads(JSON_output)
+    AES_ciphertext = jsonFile['AES_ciphertext']
+    RSA_ciphertext = jsonFile['RSA_ciphertext']
+    HMAC_tag = jsonFile['HMAC_Tag']
+
+    privateKeyFile = open(privateKeyAddress, 'rb')
+    privateKey = RSA.import_key(privateKeyFile.read()) #create rsa private key object
+
+    cipher_rsa = PKCS1_OAEP.new(privateKey) #create rsa cipher object
+    keys_plaintext = cipher_rsa.decrypt(RSA_ciphertext)
+    AES_key = keys_plaintext[0:255]
+    print(AES_key)
+
+    #print(AES_ciphertext)
+
+
     return
 
 
@@ -75,9 +96,11 @@ message = input('Please enter message to encrypt:')
 
 JSON_output = encryptMessage(publicKeyAddress, message)
 
-privateKeyAddress = input('Please enter the address of your private key')
+privateKeyAddress = input('Please enter the address of your private key: ')
 
-decryptMessage 
+decryptMessage(privateKeyAddress, JSON_output)
+
+
 
 
 
