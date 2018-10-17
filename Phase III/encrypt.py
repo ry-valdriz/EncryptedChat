@@ -8,56 +8,56 @@ from Crypto.Util.Padding import pad,unpad
 from Crypto.Random import get_random_bytes
 from Crypto.Hash import HMAC, SHA256
 
+def encryptAES(message, key_AES):
+    message = message.encode('utf-8')#convert to bytes to use in AES encryption function
+    cipher_AES = AES.new(key_AES, AES.MODE_CBC) #initialize AES object
+    cipherText_Message_Bytes = cipher_AES.encrypt(pad(message, 128)) #encrypt message
+    iv = b64encode(cipher_AES.iv).decode('utf-8') #conver iv from bytes to string
+    print('iv : ', iv)
+    print('iv length: ', len(iv))
+    return cipherText_Message_Bytes
+
+def encryptRSA(publicKeyFile, keys_bytes):
+    publicKey = RSA.generate(2048) #generate rsa key object
+    publicKey = RSA.import_key(publicKeyFile.read()) #create rsa public key object
+    cipher_rsa = PKCS1_OAEP.new(publicKey) #create rsa cipher object
+    return cipher_rsa.encrypt(keys_bytes)
 
 def encryptMessage(publicKeyAddress, message): #encryption function
-    publicKey = RSA.generate(2048) #generate rsa key object
-
+    print('Encrypting. . . . . . . . . . . . . . . . . .')
+    
     #create file object for public key
-    #publicKeyFile = open('C:\Users\valdr\duodolo-app\public.pem', 'r')
     publicKeyFile = open(publicKeyAddress, 'rb')
 
     #print('contents of public key: ' + '\n', publicKeyFile.read())
-
-    publicKey = RSA.import_key(publicKeyFile.read()) #create rsa public key object
-
-    message = message.encode('utf-8')#convert to bytes to use in AES encryption function
-
-    cipher_rsa = PKCS1_OAEP.new(publicKey) #create rsa cipher object
-
+    
     key_AES = get_random_bytes(32) #generate 256 bit key for AES
-
-    cipher_AES = AES.new(key_AES, AES.MODE_CBC) #initialize AES object
-
-    cipherText_Message_Bytes = cipher_AES.encrypt(pad(message, 128)) #encrypt message
+    cipherText_Message_Bytes = encryptAES(message, key_AES) #encrypt message
 
     key_HMAC = get_random_bytes(32) 
-    print('key_hmac: ',b64encode(key_HMAC).decode('utf-8'))
+   
     h = HMAC.new(key_HMAC, digestmod=SHA256) #instantiate hmac object
 
     print('print cipher text in bytes: ', cipherText_Message_Bytes)
    
-
     # keys_bytearray = bytearray(key_AES) #copy aes key to bytearray
     # keys_bytearray.append(key_HMAC) #append hmac key to keys_bytearray
     ka = b64encode(key_AES).decode('utf-8') #string of aes key
-    
     print('AES key length: ', len(ka))
+
     kh = b64encode(key_HMAC).decode('utf-8') #string of hmac key
-    print('key_hmac2: ', kh)
     print('hmac key length: ', len(kh))
+
     k = ka + kh #concatenate the two keys
     print('Concatenated Keys:', k) #test
     print('concatenated keys length:', len(k))
 
     keys_bytes = k.encode('utf-8') #convert back to bytes
 
-    cipherText_Keys_Bytes = cipher_rsa.encrypt(keys_bytes) #encrypt AES and HMAC keys with rsa encryption
+    cipherText_Keys_Bytes = encryptRSA(publicKeyFile, keys_bytes) #encrypt AES and HMAC keys with rsa encryption
     cipherText_Keys_String = b64encode(cipherText_Keys_Bytes).decode('utf-8')
 
     print('Encrypted keys:' , cipherText_Keys_String ) #print out AES and HMAC keys concatenated and encrypted
-
-    iv = b64encode(cipher_AES.iv).decode('utf-8') #conver iv from bytes to string
-    print('iv : ', iv)
 
     cipherText = b64encode(cipherText_Message_Bytes).decode('utf-8') #convert cipher text from bytes to string
     h.update(cipherText.encode('utf-8')) #authenticate the message
@@ -71,6 +71,7 @@ def encryptMessage(publicKeyAddress, message): #encryption function
     print('hmac tag  encryption: ', h.hexdigest())
     print('AES Key: ', ka)
     print('HMAC Key: ',kh)
+
     #print(JSON_output)
     outfile = open("Testing.encrypt", "w")
     outfile.write(JSON_output)
@@ -80,7 +81,8 @@ def encryptMessage(publicKeyAddress, message): #encryption function
     
 
 def decryptMessage(privateKeyAddress, JSON_output):
-    
+    print('Decrypting. . . . . . . . . . . . . . . . .')
+
     jsonFile = json.loads(JSON_output)
     AES_ciphertext = jsonFile['AES_ciphertext']
     #AES_ciphertext = b64decode(jsonFile['AES_ciphertext']) #need it in bytes for HMAC
