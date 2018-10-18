@@ -11,10 +11,14 @@ from Crypto.Hash import HMAC, SHA256
 def encryptAES(message, key_AES):
     message = message.encode('utf-8')#convert to bytes to use in AES encryption function
     cipher_AES = AES.new(key_AES, AES.MODE_CBC) #initialize AES object
-    iv = b64encode(cipher_AES.iv).decode('utf-8') #conver iv from bytes to string
+    iv = cipher_AES.iv
     cipherText_Message_Bytes = cipher_AES.encrypt(pad(message, 128)) #encrypt message
+    print('cipherText_Message_Bytes: ', cipherText_Message_Bytes)
+    print('cipherText_Message_Bytes length: ', len(cipherText_Message_Bytes))
     print('iv : ', iv)
     print('iv length: ', len(iv))
+    cipherText_Message_Bytes = iv + cipherText_Message_Bytes #prepend iv
+    print('ciphertext with prepended iv: ', cipherText_Message_Bytes)
     return cipherText_Message_Bytes
 
 def encryptRSA(publicKeyFile, keys_bytes): #change to PGP
@@ -42,39 +46,40 @@ def encryptMessage(publicKeyAddress, message): #encryption function
     
     key_AES = get_random_bytes(32) #generate 256 bit key for AES
     key_HMAC = get_random_bytes(32) #256 bit key for HMAC
-    print('key_HMAC before b64encode: ', key_HMAC)
-    print('key_AES before b64encode: ', key_AES)
 
     cipherText_Message_Bytes = encryptAES(message, key_AES) #encrypt message with AES
    
     h = createHMAC(key_HMAC) #HMAC object
 
-    print('print cipher text in bytes: ', cipherText_Message_Bytes)
-   
     # keys_bytearray = bytearray(key_AES) #copy aes key to bytearray
     # keys_bytearray.append(key_HMAC) #append hmac key to keys_bytearray
-    ka = b64encode(key_AES).decode('utf-8') #string of aes key
-    print('AES key length: ', len(ka))
-    print('AES key: ',ka)
+    # ka = b64encode(key_AES).decode('utf-8') #string of aes key
+    print('AES key length: ', len(key_AES))
+    print('AES key: ',key_AES)
 
 
-    kh = b64encode(key_HMAC).decode('utf-8') #string of hmac key
-    print('hmac key length: ', len(kh))
-    print('HMAC key: ',kh)
+    # kh = b64encode(key_HMAC).decode('utf-8') #string of hmac key
+    print('hmac key length: ', len(key_HMAC))
+    print('HMAC key: ',key_HMAC)
 
-    k = ka + kh #concatenate the two keys
-    print('Concatenated Keys:', k) #test
-    print('concatenated keys length:', len(k))
+    #k = ka + kh #concatenate the two keys
+    # print('Concatenated Keys:', k) #test
+    # print('concatenated keys length:', len(k))
 
     
-    keys_bytes = k.encode('utf-8') #convert back to bytes
-    print('key_bytes: ', keys_bytes)
-    print('key_bytes.decode: ', keys_bytes.decode())
+    # keys_bytes = k.encode('utf-8') #convert back to bytes
+    # print('key_bytes: ', keys_bytes)
+    # print('key_bytes.decode: ', keys_bytes.decode())
 
-    cipherText_Keys_Bytes = encryptRSA(publicKeyFile, keys_bytes) #encrypt AES and HMAC keys with rsa encryption
+    KeysHA = key_AES + key_HMAC #concatenated keys
+    
+    print('Concatenated Keys: ', KeysHA) 
+
+    cipherText_Keys_Bytes = encryptRSA(publicKeyFile, KeysHA) #encrypt AES and HMAC keys with rsa encryption
+    print('Encrypted Keys in Bytes: ', cipherText_Keys_Bytes)
     cipherText_Keys_String = b64encode(cipherText_Keys_Bytes).decode('utf-8')
 
-    print('Encrypted keys:' , cipherText_Keys_String ) #print out AES and HMAC keys concatenated and encrypted
+    print('/nBase64 Encrypted keys:' , cipherText_Keys_String ) #print out AES and HMAC keys concatenated and encrypted
 
     cipherText = b64encode(cipherText_Message_Bytes).decode('utf-8') #convert cipher text from bytes to string
 
@@ -97,9 +102,10 @@ def encryptMessage(publicKeyAddress, message): #encryption function
     
     print('ciphertext during encryption: ', cipherText)
     print('encrypted keys during encryption: ', cipherText_Keys_String)
+    print('/nkeys: ', b64decode(cipherText_Keys_String))
     print('hmac tag  encryption: ', HMAC_tag)
-    print('AES Key: ', ka)
-    print('HMAC Key: ',kh)
+    # print('AES Key: ', ka)
+    # print('HMAC Key: ',kh)
 
     #print(JSON_output)
     outfile = open("Testing.encrypt", "w")
@@ -116,12 +122,13 @@ def decryptMessage(privateKeyAddress, JSON_output):
 
     jsonFile = json.loads(JSON_output)
 
-    AES_ciphertext = jsonFile['AES_ciphertext']
+    AES_ciphertext = b64decode(jsonFile['AES_ciphertext'])
 
     #AES_ciphertext = b64decode(jsonFile['AES_ciphertext']) #need it in bytes for HMAC
     #RSA_ciphertext = jsonFile['RSA_ciphertext']
     RSA_ciphertext = b64decode(jsonFile['RSA_ciphertext']) #encrypted keys
     HMAC_tag = jsonFile['HMAC_Tag']
+    print('RSA_ciphertext: ', RSA_ciphertext)
     print('hmac_tag_encryption in decryption: ', HMAC_tag)
 
     
@@ -134,22 +141,22 @@ def decryptMessage(privateKeyAddress, JSON_output):
 
     keys_plaintext = decryptRSA(privateKey, RSA_ciphertext)
     
+    print('keys_plaintext: ', keys_plaintext)
     #test
     #keys_plaintext.decode('utf-8')
     
     #print('RSA_ciphertext length decryption: ', len(RSA_ciphertext))
-    key_AES = keys_plaintext[0:43]
-    key_HMAC = keys_plaintext[44:87]
+    key_AES = keys_plaintext[0:32]
+    key_HMAC = keys_plaintext[32:64]
 
     print('aes key during decryption', key_AES)
     print('HMAC key during decryption', key_HMAC)
     #print('AES_Key: ', AES_key)
     #print(AES_ciphertext)
-
     #HMAC_key.decode('utf-8') #change to byte string for HMAC
     hm = createHMAC(key_HMAC)
-    
-    hm.update(AES_ciphertext.encode('utf-8'))
+
+    hm.update(AES_ciphertext)
 
     print('hmac tag during decryption', hm.hexdigest())
 
@@ -161,9 +168,20 @@ def decryptMessage(privateKeyAddress, JSON_output):
     try:
         hm.hexverify(HMAC_tag)
         print('the message is authentic')
+        print('Decrypting message . . . . . . . . .')
+        
     except ValueError:
         print('The message or key is wrong')
     
+    #separate iv from cipher text
+    iv = AES_ciphertext[0:16]
+    print('iv: ', iv)
+    AES_ciphertext = AES_ciphertext[16: 144]
+    print('AES_ciphertext: ', AES_ciphertext)
+    cipher_AES = AES.new(key_AES, AES.MODE_CBC, iv)
+    plainText = unpad(cipher_AES.decrypt(AES_ciphertext), 128)
+    print("Plain text: ", plainText)
+
 
     return
 
