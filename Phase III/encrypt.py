@@ -184,10 +184,14 @@ def decryptMessage(privateKeyAddress, JSON_output):
         plainText = plainText.decode('utf-8')
         print("Plain text: ", plainText)
     except ValueError:
-        print('Failed Decryption. . . . . .')
+        print('Failed Decryption. . . . . . . . . . .')
 
 
-    return
+    outfile = open("Testing.decrypt", "w")
+    outfile.write(plainText)
+    outfile.close()
+
+    return 
 
 
 #MAIN FUNCTION
