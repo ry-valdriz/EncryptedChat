@@ -23,6 +23,15 @@ def encryptRSA(publicKeyFile, keys_bytes):
     cipher_rsa = PKCS1_OAEP.new(publicKey) #create rsa cipher object
     return cipher_rsa.encrypt(keys_bytes)
 
+def decryptRSA(privateKey, RSA_ciphertext):
+    cipher_rsa = PKCS1_OAEP.new(privateKey) #create rsa cipher object
+    return cipher_rsa.decrypt(RSA_ciphertext)
+
+
+def createHMAC(key_HMAC):
+    return HMAC.new(key_HMAC, digestmod=SHA256) #instantiate hmac object
+
+
 def encryptMessage(publicKeyAddress, message): #encryption function
     print('Encrypting. . . . . . . . . . . . . . . . . .')
     
@@ -32,11 +41,11 @@ def encryptMessage(publicKeyAddress, message): #encryption function
     #print('contents of public key: ' + '\n', publicKeyFile.read())
     
     key_AES = get_random_bytes(32) #generate 256 bit key for AES
-    cipherText_Message_Bytes = encryptAES(message, key_AES) #encrypt message
+    key_HMAC = get_random_bytes(32) #256 bit key for HMAC
 
-    key_HMAC = get_random_bytes(32) 
+    cipherText_Message_Bytes = encryptAES(message, key_AES) #encrypt message with AES
    
-    h = HMAC.new(key_HMAC, digestmod=SHA256) #instantiate hmac object
+    h = createHMAC(key_HMAC) #HMAC object
 
     print('print cipher text in bytes: ', cipherText_Message_Bytes)
    
@@ -60,6 +69,7 @@ def encryptMessage(publicKeyAddress, message): #encryption function
     print('Encrypted keys:' , cipherText_Keys_String ) #print out AES and HMAC keys concatenated and encrypted
 
     cipherText = b64encode(cipherText_Message_Bytes).decode('utf-8') #convert cipher text from bytes to string
+
     h.update(cipherText.encode('utf-8')) #authenticate the message
 
     print('HMAC tag: ', h.hexdigest()) #print out hmac tag of the authenticated message
@@ -84,7 +94,9 @@ def decryptMessage(privateKeyAddress, JSON_output):
     print('Decrypting. . . . . . . . . . . . . . . . .')
 
     jsonFile = json.loads(JSON_output)
+
     AES_ciphertext = jsonFile['AES_ciphertext']
+
     #AES_ciphertext = b64decode(jsonFile['AES_ciphertext']) #need it in bytes for HMAC
     #RSA_ciphertext = jsonFile['RSA_ciphertext']
     RSA_ciphertext = b64decode(jsonFile['RSA_ciphertext']) #encrypted keys
@@ -97,26 +109,23 @@ def decryptMessage(privateKeyAddress, JSON_output):
 
     print('AES ciphertext during decryption', AES_ciphertext)
 
-    cipher_rsa = PKCS1_OAEP.new(privateKey) #create rsa cipher object
-    
-    keys_plaintext = cipher_rsa.decrypt(RSA_ciphertext)
+    keys_plaintext = decryptRSA(privateKey, RSA_ciphertext)
     
     keys_plaintext.decode('utf-8')
     
     print('RSA_ciphertext length decryption: ', len(RSA_ciphertext))
     AES_key = keys_plaintext[0:43]
-    HMAC_key = keys_plaintext[44:87]
+    key_HMAC = keys_plaintext[44:87]
 
     print('aes key during decryption', AES_key)
-    print('HMAC key during decryption', HMAC_key)
+    print('HMAC key during decryption', key_HMAC)
     #print('AES_Key: ', AES_key)
     #print(AES_ciphertext)
 
     #HMAC_key.decode('utf-8') #change to byte string for HMAC
-    hm = HMAC.new(HMAC_key, digestmod=SHA256) #instantiate hmac object
+    hm = createHMAC(key_HMAC)
     
     hm.update(AES_ciphertext.encode('utf-8'))
-
 
     print('hmac tag during decryption', hm.hexdigest())
 
@@ -130,9 +139,6 @@ def decryptMessage(privateKeyAddress, JSON_output):
         print('the message is authentic')
     except ValueError:
         print('The message or key is wrong')
-    
-
-    
     
 
     return
