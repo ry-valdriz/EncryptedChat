@@ -13,12 +13,12 @@ def encryptAES(message, key_AES):
     cipher_AES = AES.new(key_AES, AES.MODE_CBC) #initialize AES object
     iv = cipher_AES.iv
     cipherText_Message_Bytes = cipher_AES.encrypt(pad(message, 128)) #encrypt message
-    print('cipherText_Message_Bytes: ', cipherText_Message_Bytes)
-    print('cipherText_Message_Bytes length: ', len(cipherText_Message_Bytes))
-    print('iv : ', iv)
-    print('iv length: ', len(iv))
+    # print('cipherText_Message_Bytes: ', cipherText_Message_Bytes)
+    # print('cipherText_Message_Bytes length: ', len(cipherText_Message_Bytes))
+    # print('iv : ', iv)
+    # print('iv length: ', len(iv))
     cipherText_Message_Bytes = iv + cipherText_Message_Bytes #prepend iv
-    print('ciphertext with prepended iv: ', cipherText_Message_Bytes)
+    #print('ciphertext with prepended iv: ', cipherText_Message_Bytes)
     return cipherText_Message_Bytes
 
 def encryptRSA(publicKeyFile, keys_bytes): #change to PGP
@@ -102,7 +102,7 @@ def encryptMessage(publicKeyAddress, message): #encryption function
     
     print('ciphertext during encryption: ', cipherText)
     print('encrypted keys during encryption: ', cipherText_Keys_String)
-    print('/nkeys: ', b64decode(cipherText_Keys_String))
+    #print('/nkeys: ', b64decode(cipherText_Keys_String))
     print('hmac tag  encryption: ', HMAC_tag)
     # print('AES Key: ', ka)
     # print('HMAC Key: ',kh)
@@ -173,14 +173,18 @@ def decryptMessage(privateKeyAddress, JSON_output):
     except ValueError:
         print('The message or key is wrong')
     
-    #separate iv from cipher text
-    iv = AES_ciphertext[0:16]
-    print('iv: ', iv)
-    AES_ciphertext = AES_ciphertext[16: 144]
-    print('AES_ciphertext: ', AES_ciphertext)
-    cipher_AES = AES.new(key_AES, AES.MODE_CBC, iv)
-    plainText = unpad(cipher_AES.decrypt(AES_ciphertext), 128)
-    print("Plain text: ", plainText)
+    try:
+        #separate iv from cipher text
+        iv = AES_ciphertext[0:16]
+        print('iv: ', iv)
+        AES_ciphertext = AES_ciphertext[16: 144]
+        print('AES_ciphertext: ', AES_ciphertext)
+        cipher_AES = AES.new(key_AES, AES.MODE_CBC, iv)
+        plainText = unpad(cipher_AES.decrypt(AES_ciphertext), 128)
+        plainText = plainText.decode('utf-8')
+        print("Plain text: ", plainText)
+    except ValueError:
+        print('Failed Decryption. . . . . .')
 
 
     return
