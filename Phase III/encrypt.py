@@ -21,6 +21,12 @@ def encryptAES(message, key_AES):
     #print('ciphertext with prepended iv: ', cipherText_Message_Bytes)
     return cipherText_Message_Bytes
 
+def decryptAES(key_AES, cipherText, iv):
+    cipher_AES = AES.new(key_AES, AES.MODE_CBC, iv)
+    plainText = unpad(cipher_AES.decrypt(cipherText), 128)
+    plainText = plainText.decode('utf-8')
+    return plainText
+
 def encryptRSA(publicKeyFile, keys_bytes): #change to PGP
     publicKey = RSA.generate(2048) #generate rsa key object
     publicKey = RSA.import_key(publicKeyFile.read()) #create rsa public key object
@@ -120,76 +126,82 @@ def encryptMessage(publicKeyAddress, message): #encryption function
 def decryptMessage(privateKeyAddress, JSON_output):
     print('Decrypting. . . . . . . . . . . . . . . . .')
 
-    jsonFile = json.loads(JSON_output)
-
-    AES_ciphertext = b64decode(jsonFile['AES_ciphertext'])
-
-    #AES_ciphertext = b64decode(jsonFile['AES_ciphertext']) #need it in bytes for HMAC
-    #RSA_ciphertext = jsonFile['RSA_ciphertext']
-    RSA_ciphertext = b64decode(jsonFile['RSA_ciphertext']) #encrypted keys
-    HMAC_tag = jsonFile['HMAC_Tag']
-    print('RSA_ciphertext: ', RSA_ciphertext)
-    print('hmac_tag_encryption in decryption: ', HMAC_tag)
-
-    
-    privateKeyFile = open(privateKeyAddress, 'rb')
-    privateKey = RSA.generate(2048) #generate rsa key object
-    privateKey = RSA.import_key(privateKeyFile.read()) #create rsa private key object
-
-    print('AES ciphertext during decryption: ', AES_ciphertext)
-    print('RSA ciphertext during decryption: ', RSA_ciphertext)
-
-    keys_plaintext = decryptRSA(privateKey, RSA_ciphertext)
-    
-    print('keys_plaintext: ', keys_plaintext)
-    #test
-    #keys_plaintext.decode('utf-8')
-    
-    #print('RSA_ciphertext length decryption: ', len(RSA_ciphertext))
-    key_AES = keys_plaintext[0:32]
-    key_HMAC = keys_plaintext[32:64]
-
-    print('aes key during decryption', key_AES)
-    print('HMAC key during decryption', key_HMAC)
-    #print('AES_Key: ', AES_key)
-    #print(AES_ciphertext)
-    #HMAC_key.decode('utf-8') #change to byte string for HMAC
-    hm = createHMAC(key_HMAC)
-
-    hm.update(AES_ciphertext)
-
-    print('hmac tag during decryption', hm.hexdigest())
-
-    # if hm.verify(HMAC_tag.encode('utf-8')):
-    #     print('mac tag is authentic')
-    # else:
-    #     print('message or key is wrong')
-    
     try:
-        hm.hexverify(HMAC_tag)
-        print('the message is authentic')
-        print('Decrypting message . . . . . . . . .')
+        JSON = JSON_output.read()#read file
+
+        jsonFile = json.loads(JSON)
+
+        AES_ciphertext = b64decode(jsonFile['AES_ciphertext'])
+
+        #AES_ciphertext = b64decode(jsonFile['AES_ciphertext']) #need it in bytes for HMAC
+        #RSA_ciphertext = jsonFile['RSA_ciphertext']
+        RSA_ciphertext = b64decode(jsonFile['RSA_ciphertext']) #encrypted keys
+        HMAC_tag = jsonFile['HMAC_Tag']
+        print('RSA_ciphertext: ', RSA_ciphertext)
+        print('hmac_tag_encryption in decryption: ', HMAC_tag)
+
         
-    except ValueError:
-        print('The message or key is wrong')
-    
-    try:
+        privateKeyFile = open(privateKeyAddress, 'rb')
+        privateKey = RSA.generate(2048) #generate rsa key object
+        privateKey = RSA.import_key(privateKeyFile.read()) #create rsa private key object
+
+        print('AES ciphertext during decryption: ', AES_ciphertext)
+        print('RSA ciphertext during decryption: ', RSA_ciphertext)
+
+        keys_plaintext = decryptRSA(privateKey, RSA_ciphertext)
+        
+        print('keys_plaintext: ', keys_plaintext)
+        #test
+        #keys_plaintext.decode('utf-8')
+        
+        #print('RSA_ciphertext length decryption: ', len(RSA_ciphertext))
+        key_AES = keys_plaintext[0:32]
+        key_HMAC = keys_plaintext[32:64]
+
+        print('aes key during decryption', key_AES)
+        print('HMAC key during decryption', key_HMAC)
+        #print('AES_Key: ', AES_key)
+        #print(AES_ciphertext)
+        #HMAC_key.decode('utf-8') #change to byte string for HMAC
+        hm = createHMAC(key_HMAC)
+
+        hm.update(AES_ciphertext)
+
+        print('hmac tag during decryption', hm.hexdigest())
+
+        # if hm.verify(HMAC_tag.encode('utf-8')):
+        #     print('mac tag is authentic')
+        # else:
+        #     print('message or key is wrong')
+        
+        try:
+            hm.hexverify(HMAC_tag)
+            print('the message is authentic')
+            print('Decrypting message . . . . . . . . .')
+            
+        except ValueError:
+            print('The message or key is wrong')
+            return
+        
         #separate iv from cipher text
         iv = AES_ciphertext[0:16]
         print('iv: ', iv)
         AES_ciphertext = AES_ciphertext[16: 144]
         print('AES_ciphertext: ', AES_ciphertext)
-        cipher_AES = AES.new(key_AES, AES.MODE_CBC, iv)
-        plainText = unpad(cipher_AES.decrypt(AES_ciphertext), 128)
-        plainText = plainText.decode('utf-8')
+
+        plainText = decryptAES(key_AES,AES_ciphertext, iv) #decrypt AES
+       
         print("Plain text: ", plainText)
+
+
+
+
+        outfile = open("Testing.decrypt", "w")
+        outfile.write(plainText)
+        outfile.close()
     except ValueError:
-        print('Failed Decryption. . . . . . . . . . .')
+        print('Decryption Failed. . . . . . .')
 
-
-    outfile = open("Testing.decrypt", "w")
-    outfile.write(plainText)
-    outfile.close()
 
     return 
 
@@ -198,7 +210,9 @@ def decryptMessage(privateKeyAddress, JSON_output):
 publicKeyAddress = input('Please enter the address of your public key: ')
 message = input('Please enter message to encrypt:')
 
-JSON_output = encryptMessage(publicKeyAddress, message)
+#JSON_output = encryptMessage(publicKeyAddress, message)
+encryptMessage(publicKeyAddress, message)
+JSON_output = open('Testing.encrypt', 'r')
 
 privateKeyAddress = input('Please enter the address of your private key: ')
 
