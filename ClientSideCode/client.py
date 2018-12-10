@@ -2,26 +2,26 @@ import requests
 import json
 from encrypt_decrypt import encryptMessage, decryptMessage
 
-def main():
-    print("----------------------")
-    print("DuoDolo encrypted chat")
-    print("----------------------" + "\n")
+#def main()
+    # print("----------------------")
+    # print("DuoDolo encrypted chat")
+    # print("----------------------" + "\n")
 
-    while(True): #reiterate the app until the user decides to exit
-        print("1. Register")
-        print("2. Login")
-        print("3. Quit")
-        choice = input("Select a number: ")
-        print("")
-        if(choice == 1):
-            Register()
-        elif(choice == 2):
-            Login()
-        else:
-            print("---------------")
-            print("Exiting DuoDolo")
-            print("---------------")
-            break
+    # while(True): #reiterate the app until the user decides to exit
+    #     print("1. Register")
+    #     print("2. Login")
+    #     print("3. Quit")
+    #     choice = input("Select a number: ")
+    #     print("")
+    #     if(choice == 1):
+    #         Register()
+    #     elif(choice == 2):
+    #         Login()
+    #     else:
+    #         print("---------------")
+    #         print("Exiting DuoDolo")
+    #         print("---------------")
+    #         break
 
 def Login():
     #https://www.pythonforbeginners.com/requests/using-requests-in-python
@@ -76,5 +76,28 @@ def Register():
         print("Something went wrong with " + url + " route")
         return
     
+def chat(jwt):
+    return
 
+
+#MAIN FUNCTION
+print("----------------------")
+print("DuoDolo encrypted chat")
+print("----------------------" + "\n")
+
+while(True): #reiterate the app until the user decides to exit
+    print("1. Register")
+    print("2. Login")
+    print("3. Quit")
+    choice = input("Select a number: ")
+    print("")
+    if(choice == '1'):
+        Register()
+    elif(choice == '2'):
+        Login()
+    else:#exit
+        print("---------------")
+        print("Exiting DuoDolo")
+        print("---------------")
+        break
 
