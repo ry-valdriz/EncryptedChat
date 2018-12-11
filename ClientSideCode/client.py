@@ -1,6 +1,4 @@
 import requests
-import os
-import sys
 import json
 from encrypt_decrypt import encryptMessage, decryptMessage
 
