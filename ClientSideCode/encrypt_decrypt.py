@@ -75,28 +75,31 @@ def encryptMessage(publicKeyAddress, message): #encryption function
 
 
 
-    return JSON_output #return json object containing encrypted keys, ciphertexts, and HMAC tag
-    
+    #return JSON_output #return json object containing encrypted keys, ciphertexts, and HMAC tag
+    return cipherText, cipherText_Keys_String, HMAC_tag
 
-def decryptMessage(privateKeyAddress, JSON_output):
-    print('Decrypting. . . . . . . . . . . . . . . . .')
+def decryptMessage(privateKeyAddress, AES, RSA_ciphertext, Tag):
+    print('Checking integrity of message . . . . . . . .')
 
     try:
-        JSON = JSON_output.read()#read file
+        # JSON = JSON_output.read()#read file
 
-        jsonFile = json.loads(JSON)
+        # JSON_output = json.loads(JSON)
 
-        AES_ciphertext = b64decode(jsonFile['AES_ciphertext'])
+        # AES_ciphertext = b64decode(JSON_output['AES_ciphertext'])
+        AES_ciphertext = b64decode(AES)
 
-        RSA_ciphertext = b64decode(jsonFile['RSA_ciphertext']) #encrypted keys
-        HMAC_tag = jsonFile['HMAC_Tag']
+        #RSA_ciphertext = b64decode(JSON_output['RSA_ciphertext']) #encrypted keys
+        RSA_keys = b64decode(RSA_ciphertext)
+        # HMAC_tag = JSON_output['HMAC_Tag']
+        HMAC_tag = Tag
       
         privateKeyFile = open(privateKeyAddress, 'rb')
         privateKey = RSA.generate(2048) #generate rsa key object
         privateKey = RSA.import_key(privateKeyFile.read()) #create rsa private key object
         privateKeyFile.close() #close key file
 
-        keys_plaintext = decryptRSA(privateKey, RSA_ciphertext)
+        keys_plaintext = decryptRSA(privateKey, RSA_keys)
 
         key_AES = keys_plaintext[0:32]
         key_HMAC = keys_plaintext[32:64]

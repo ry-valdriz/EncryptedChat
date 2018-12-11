@@ -1,4 +1,6 @@
 import requests
+import os
+import sys
 import json
 from encrypt_decrypt import encryptMessage, decryptMessage
 
@@ -18,13 +20,14 @@ def Login():
             return
         else: #
             jwt = json_response['token']
+            #print('jwt', jwt)
             chat(jwt)
             return
     elif(r.status_code == 500): #server error
         print("Server Error")
         return
     elif(r.status_code == 404):
-        print("No user with that email") #no matching accounts
+        print("No user with that email" + "\n") #no matching accounts
         return
     else: #hopefully doesn't happen
         print("Something went wrong with " + url + " route")
@@ -43,6 +46,7 @@ def Register():
     if(r.status_code == 200): #everything went well
         json_response = r.json()
         jwt = json_response['token']
+        #print('jwt',jwt)
         chat(jwt)
         return
     elif(r.status_code == 500): #problem registering the user
@@ -56,8 +60,8 @@ def Register():
         return
     
 def chat(jwt):
-    send_url = 'http://localhost:3000/api/Message/send'
-    receive_url = 'http://localhost:3000/api/Message/receive'
+    send_url = 'http://localhost:3000/api/mess/send'
+    receive_url = 'http://localhost:3000/api/mess/receive'
     
     while(1):
         print("\n" + "--------------------" + "\n"+  "CHAT" + "\n" + "--------------------")
@@ -66,13 +70,13 @@ def chat(jwt):
         print("3. Exit")
         choice = input("Please select a number: ")
 
-        if(choice == '1'): //send
+        if(choice == '1'): #send
             recipient = input("Please enter email of recipient: ")
             message = input("message: ")
             publicKeyAddress = input("Please enter address of public key: ")
             
-            cipherText = encryptMessage(publicKeyAddress, message)
-            payload = {'recipient' : recipient, 'content' : cipherText}
+            AES, RSA, Tag = encryptMessage(publicKeyAddress, message)
+            payload = {'recipient' : recipient, 'AES' : AES, 'RSA' : RSA, 'Tag' : Tag}
             headers = {'x-access-token' : jwt}
 
             r = requests.post(send_url, data = payload, headers = headers)
@@ -83,26 +87,35 @@ def chat(jwt):
             else:
                 print("Something went wrong. . . ")
 
-        elif(choice == '2'): //receive
+        elif(choice == '2'): #receive
+            privateKeyAddress = input("Please enter the address of your private key: ")
+            print('')
             headers = {'x-access-token' : jwt}
             r = requests.get(receive_url, headers = headers)
+            #print('status code: ',r.status_code)
             json_response = r.json()
-            privateKeyAddress = input("Please enter the address of your private key: ")
-            //iterate through messages
+            #print('json response', json_response)
+            r.raise_for_status()
+            #iterate through messages
+            #print('before the loop')
             for x in json_response:
+                #print('in the loop')
                 sender = x['sender']
                 recipient = x['recipient']
-                ciphertext = x['content']
-
-                plainText = decryptMessage(privateKeyAddress,json_response[x])
-
+                AES = x['AES']
+                RSA = x['RSA']
+                Tag = x['Tag']
+                #print('cipher text', ciphertext)
+                plainText = decryptMessage(privateKeyAddress, AES, RSA, Tag)
+                print("-----------------------------------------")
                 print("Sender: ", sender)
                 print("Recipient: ", recipient)
-                print("Message" , plainText)
-                print("-----------------------------------------")
+                print("Message: " , plainText)
+                print("-----------------------------------------" + "\n")
                 print("")
         else:
             print("Exiting. . . ." + "\n")
+            return 
 
     return
 
@@ -128,3 +141,4 @@ def main():
             print("---------------")
             break
 
+main()
