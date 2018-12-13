@@ -1,0 +1,6 @@
+c:\Users\valdr\Desktop\public.pem
+
+c:\Users\valdr\Desktop\private.pem
+
+
+& C:/Users/valdr/AppData/Local/Programs/Python/Python35-32/python.exe c:/cecs478repo/cecs478/ClientSideCode/client.py

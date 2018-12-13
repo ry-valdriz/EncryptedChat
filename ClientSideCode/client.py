@@ -10,6 +10,7 @@ def Login():
     password = input("Password: ")
     payload = {'email': email, 'password':password}
     r = requests.post(url, payload)#POST request to server
+
     #check response codes
     if(r.status_code == 200): #everything worked
         json_response = r.json()
@@ -78,6 +79,7 @@ def chat(jwt):
             headers = {'x-access-token' : jwt}
 
             r = requests.post(send_url, data = payload, headers = headers)
+            #check response codes
             if(r.status_code == 500):
                 print("Error sending the message. . .")
             elif(r.status_code == 200):
@@ -109,7 +111,7 @@ def chat(jwt):
                 print("Sender: ", sender)
                 print("Recipient: ", recipient)
                 print("Message: " , plainText)
-                print("-----------------------------------------" + "\n")
+                print("-----------------------------------------")
                 print("")
         else:
             print("Exiting. . . ." + "\n")
