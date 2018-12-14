@@ -20,7 +20,9 @@ router.post('/send', VerifyToken, function(req, res, next) {
     Message.create({
       sender: user.email,
       recipient: req.body.recipient,
-      content: req.body.content
+      AES: req.body.AES,
+      RSA: req.body.RSA,
+      Tag: req.body.Tag
     },
     function(err) {
       if (err) {

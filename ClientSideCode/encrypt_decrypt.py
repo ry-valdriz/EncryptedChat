@@ -67,7 +67,7 @@ def encryptMessage(publicKeyAddress, message): #encryption function
 
     HMAC_tag = h.hexdigest()
 
-    JSON_output = json.dumps({'AES_ciphertext' : cipherText, 'RSA_ciphertext' : cipherText_Keys_String, 'HMAC_Tag' : HMAC_tag }) 
+    #JSON_output = json.dumps({'AES_ciphertext' : cipherText, 'RSA_ciphertext' : cipherText_Keys_String, 'HMAC_Tag' : HMAC_tag }) 
     
     # outfile = open("Testing.encrypt", "w")
     # outfile.write(JSON_output)
@@ -119,7 +119,7 @@ def decryptMessage(privateKeyAddress, AES, RSA_ciphertext, Tag):
             print('Decrypting message . . . . . . . . .')
             
         except ValueError:
-            print('The message or key is wrong')
+            print('The message has been tampered with or the key is wrong')
             return
         
         #separate iv from cipher text
@@ -150,22 +150,6 @@ def decryptMessage(privateKeyAddress, AES, RSA_ciphertext, Tag):
 
 
     return 
-
-
-# #MAIN FUNCTION
-# publicKeyAddress = input('Please enter the address of your public key: ')
-# message = input('Please enter message to encrypt:')
-
-# #JSON_output = encryptMessage(publicKeyAddress, message)
-# encryptMessage(publicKeyAddress, message)
-# JSON_output = open('Testing.encrypt', 'r')
-
-# privateKeyAddress = input('Please enter the address of your private key: ')
-
-# decryptMessage(privateKeyAddress, JSON_output)
-
-
-
 
 
 
