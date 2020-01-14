@@ -1,0 +1,13 @@
+Instance ID: i-08e0cf0bac15f3862
+
+Elastic IP: 18.224.36.214
+
+Private IP address: 172.31.23.174
+
+Name Servers(NS):
+ns-780.awsdns-33.net
+ns-402.awsdns-50.com
+ns-1912.awsdns-47.co.uk
+ns-1283.awsdns-32.org
+	
+Public DNS(IPv4): ec2-18-224-36-214.us-east-2.compute.amazonaws.com
